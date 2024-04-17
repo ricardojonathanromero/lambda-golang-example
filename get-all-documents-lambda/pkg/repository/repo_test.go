@@ -7,11 +7,17 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/google/uuid"
 	"github.com/jarcoal/httpmock"
+	dynamodb2 "github.com/ricardojonathanromero/go-utilities/db/dynamodb"
 	"github.com/ricardojonathanromero/go-utilities/logger"
+	"github.com/ricardojonathanromero/lambda-golang-example/business/models"
+	"github.com/ricardojonathanromero/lambda-golang-example/dependencies/tests"
 	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/pkg/repository"
 	"github.com/stretchr/testify/assert"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 )
@@ -243,6 +249,131 @@ func TestRepositoryImpl_FindAllDocuments(t *testing.T) {
 			assert.Nil(t, users)
 		})
 	})
+}
+
+func TestRepositoryImpl_DockerTest(t *testing.T) {
+	dynamodbTableName := "users"
+	log := logger.NewLoggerWithOptions(logger.Opts{
+		AppName: "get-all-documents-lambda-repository-test",
+		Level:   "debug",
+	})
+
+	dynamodbSuite := tests.New("9000")
+	err := dynamodbSuite.StartDynamoDB()
+	assert.NoError(t, err)
+
+	defer dynamodbSuite.Shutdown()
+
+	// create dynamodb table
+	err = dynamodbSuite.CreateTable(getTable(dynamodbTableName))
+	assert.NoError(t, err)
+
+	// set items
+	items := []*models.UserDB{
+		{
+			ID:        uuid.NewString(),
+			Name:      "john",
+			Lastname:  "smith",
+			Age:       34,
+			Email:     "john.smith@test.com",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+		{
+			ID:        uuid.NewString(),
+			Name:      "josep",
+			Lastname:  "smith",
+			Age:       18,
+			Email:     "josep.smith@test.com",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+		{
+			ID:        uuid.NewString(),
+			Name:      "milli",
+			Lastname:  "smith",
+			Age:       24,
+			Email:     "mlli.smith@test.com",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+		{
+			ID:        uuid.NewString(),
+			Name:      "jose",
+			Lastname:  "hernandez",
+			Age:       20,
+			Email:     "jose.hernandez@test.com",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+		{
+			ID:        uuid.NewString(),
+			Name:      "martin",
+			Lastname:  "caballero",
+			Age:       17,
+			Email:     "martin.caballero@test.com",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+	}
+
+	for _, item := range items {
+		err = dynamodbSuite.PutItem(dynamodbTableName, item)
+		assert.NoError(t, err)
+	}
+
+	// init local conn
+	err = os.Setenv("ENV", "local")
+	assert.NoError(t, err)
+
+	db := dynamodb2.New()
+	conn, err := db.Connect()
+	assert.NoError(t, err)
+
+	// configure repository
+	repo := repository.New(conn, dynamodbTableName, log)
+
+	users, err := repo.FindAllDocuments(context.Background())
+	assert.NoError(t, err)
+	assert.NotNil(t, users)
+	assert.Len(t, users, 5)
+}
+
+func getTable(tableName string) *dynamodb.CreateTableInput {
+	return &dynamodb.CreateTableInput{
+		AttributeDefinitions: []types.AttributeDefinition{
+			{
+				AttributeName: aws.String("Id"),
+				AttributeType: types.ScalarAttributeTypeS,
+			},
+			{
+				AttributeName: aws.String("CreatedAt"),
+				AttributeType: types.ScalarAttributeTypeS,
+			},
+		},
+		KeySchema: []types.KeySchemaElement{
+			{
+				AttributeName: aws.String("Id"),
+				KeyType:       types.KeyTypeHash,
+			},
+			{
+				AttributeName: aws.String("CreatedAt"),
+				KeyType:       types.KeyTypeRange,
+			},
+		},
+		TableName:   aws.String(tableName),
+		BillingMode: types.BillingModePayPerRequest,
+		ProvisionedThroughput: &types.ProvisionedThroughput{
+			ReadCapacityUnits:  aws.Int64(5),
+			WriteCapacityUnits: aws.Int64(5),
+		},
+		Tags: []types.Tag{
+			{
+				Key:   aws.String("OWNER"),
+				Value: aws.String("Ricardo Romero"),
+			},
+		},
+	}
 }
 
 func toString(input any) string {

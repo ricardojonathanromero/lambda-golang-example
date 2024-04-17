@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  lambda-golang
+
+  Sample SAM Template for lambda-golang go1.x
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  getAllDocumentsFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      Timeout: 300
+      MemorySize: 128
+      CodeUri: {{ CODE_URI }}
+      Handler: bootstrap
+      Runtime: provided.al2
+      Architectures:
+        - arm64
+      Events:
+        GetAllDocuments:
+          Type: Api
+          Properties:
+            Path: /
+            Method: get
+      Environment:
+        Variables:
+          ENV: local
+          DYNAMODB_URL: {{ DYNAMODB_URL }}
+          DYNAMODB_TABLE_NAME: {{ DYNAMODB_TABLE_NAME }}
+          LOG_LEVEL: debug

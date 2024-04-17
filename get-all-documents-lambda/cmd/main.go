@@ -10,15 +10,10 @@ import (
 	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/pkg/services"
 )
 
-/*
-"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
-*/
-
 const (
-	envName      = "ENV"
+	envName      = "LOG_LEVEL"
 	envTableName = "DYNAMODB_TABLE_NAME"
-	defaultEnv   = "local"
+	defaultEnv   = "debug"
 	defaultEmpty = ""
 	appName      = "get-all-documents-lambda"
 )
@@ -33,7 +28,7 @@ func main() {
 	db := dynamodb.New()
 	conn, err := db.Connect()
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Fatalf("error initializing db connection: %s", err.Error())
 	}
 
 	defer func() {
