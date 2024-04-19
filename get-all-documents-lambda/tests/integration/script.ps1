@@ -180,7 +180,7 @@ Write-Host "directory created: $buildPath"
 Write-Host "Pre-process the SAM template $samTemplatePath"
 Get-Content $samTemplatePath | ForEach-Object {
     $_ -replace "{{ CODE_URI }}", "$codeURI" `
-       -replace "{{ DYNAMODB_URL }}", "http://host.docker.internal:$dynamodbPort" `
+       -replace "{{ DYNAMODB_URL }}", "http://localhost:$dynamodbPort" `
        -replace "{{ ARCHITECTURE }}", "$architecture" `
        -replace "{{ RUNTIME }}", "$runtime" `
        -replace "{{ HANDLER }}", "$handler" `
@@ -197,9 +197,6 @@ Write-Host "running sam cli for function" + $samFunctionName
 # build sam cli
 run_cmd "sam build $samFunctionName --template $samFilePath --build-dir $buildPath --no-cached"
 Write-Host "program built"
-# run sam cli
-Write-Host "start lambda"
-run_cmd "sam local start-lambda --template $templateBuildPath"
 
 Write-Host "invoke lambda"
 run_cmd "sam local invoke $samFunctionName --template $templateBuildPath --event $eventFilePath"

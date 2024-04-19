@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -29,13 +30,15 @@ func New(conn *dynamodb.Client, tableName string, log logger.Logger) Repository 
 
 func (repo *repositoryImpl) FindAllDocuments(ctx context.Context) ([]*models.UserDB, error) {
 	// scan input
-	input := &dynamodb.ScanInput{TableName: aws.String(repo.tableName)}
+	input := &dynamodb.ScanInput{
+		TableName: aws.String(repo.tableName),
+	}
 
 	repo.log.Debug("executing scan")
 	output, err := repo.conn.Scan(ctx, input)
 	if err != nil {
 		// eval error
-		repo.log.Errorf("error executing scan: %s", err)
+		repo.log.Errorf("error executing dynamodb fn: %s", err)
 		return nil, err
 	}
 
