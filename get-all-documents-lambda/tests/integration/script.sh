@@ -1,104 +1,238 @@
 #!/bin/bash
 
-OWNER="ricardojonathanromero"
-DOCKER_NETWORK_NAME="dynamodb-golang-lambda-network"
-DYNAMODB_DOCKER_NAME="dynamodb-local-integration-test"
-DYNAMODB_IMAGE="amazon/dynamodb-local"
-DYNAMODB_PORT=8001
-DYNAMODB_TABLE_NAME="users"
-SAM_FUNCTION_NAME="getAllDocumentsFunction"
+# Get the absolute path of the current script
+scriptPath="$(readlink -f "$0")"
 
-## clean gopath
-ABS_GOLANG_PATH=""
-GOLANG_PATH="$(go env GOPATH)"
-paths=$(echo "$GOLANG_PATH" | tr ":" "\n")
-for path in $paths
-do
-    # shellcheck disable=SC2034
-    ABS_GOLANG_PATH="$path"
-done
+################################################
+# VARIABLES
+################################################
+projectName="lambda-golang-example"
+lambdaName="get-all-documents-lambda"
+dockerNetworkName="dynamodb-golang-lambda-network"
+dockerImageName="amazon/dynamodb-local"
+dynamodbDockerName="dynamodb-local-integration-test"
+dynamodbPort="8001"
+dynamodbTableName="users"
+samFunctionName="getAllDocumentsFunction"
 
-## get GOPATH
-projectPath="$ABS_GOLANG_PATH/src/github.com/$OWNER/lambda-golang-example/get-all-documents-lambda"
-
-## configure db
-
-## create docker network
-echo "creating network"
-docker network create -d bridge "$DOCKER_NETWORK_NAME"
-echo "creating container"
-docker run -d --expose "8000" -p "$DYNAMODB_PORT:8000" --name "$DYNAMODB_DOCKER_NAME" --network "$DOCKER_NETWORK_NAME" "$DYNAMODB_IMAGE"
-DYNAMODB_URL="http://localhost:$DYNAMODB_PORT"
-echo "container created, url $DYNAMODB_URL"
-
-function clean_container() {
-    docker stop "$DYNAMODB_DOCKER_NAME"
-    docker rm "$DYNAMODB_DOCKER_NAME"
-    docker network rm "$DOCKER_NETWORK_NAME"
-}
-
-function run_cmd() {
-    typeset cmd="$1"
-    typeset ret_code
-
-    eval "$cmd"
-    ret_code=$?
-
-    if [ $ret_code == 0 ]
-    then
-        echo "command executed successfully"
-    else
-        clean_container
-        exit 1
-    fi
-}
-
-# dummy credentials
 export AWS_DEFAULT_PROFILE="default"
 
-## create table
-echo "creating table $DYNAMODB_TABLE_NAME"
-run_cmd "aws dynamodb create-table --endpoint-url $DYNAMODB_URL --table-name $DYNAMODB_TABLE_NAME --attribute-definitions AttributeName=Id,AttributeType=S AttributeName=CreatedAt,AttributeType=S --key-schema AttributeName=Id,KeyType=HASH AttributeName=CreatedAt,KeyType=RANGE --provisioned-throughput ReadCapacityUnits=10,WriteCapacityUnits=10 --tags Key=Owner,Value=RicardoRomero --no-cli-pager"
-echo "table created with name $DYNAMODB_TABLE_NAME"
+
+################################################
+# DOCKER IS RUNNING
+################################################
+if docker info > /dev/null 2>&1; then
+  echo "docker is running"
+else
+  echo "docker is not running"
+  exit 1
+fi
+
+
+################################################
+# FUNCTIONS DEFINITION
+################################################
+function IsWordInCurrentPath() {
+  workdir=$1
+  keyword=$2
+
+  if echo "$workdir" | grep -q "\<$keyword\>"; then
+    echo "TRUE"
+  else
+    echo "FALSE"
+  fi
+}
+
+function GetWorkDir() {
+  workdir=$1
+  keyword=$2
+
+  # shellcheck disable=SC2016
+  substring=$(echo "$workdir" | awk -F"$keyword" '{print $1}')
+  echo "$substring$keyword"
+}
+
+function CleanContainer() {
+  docker stop "$dynamodbDockerName"
+  docker rm "$dynamodbDockerName"
+  docker network rm "$dockerNetworkName"
+}
+
+function RunCMD() {
+  typeset cmd="$1"
+  typeset ret_code
+
+  # shellcheck disable=SC2154
+  eval "$cmd"
+  ret_code=$?
+
+  if [ $ret_code == 0 ]
+  then
+    echo "command executed successfully"
+  else
+    CleanContainer
+    exit 1
+  fi
+}
+
+function GetArchitecture() {
+  arch=$(docker version --format '{{.Server.Arch}}')
+
+  # return architecture
+  echo "$arch"
+}
+
+function GetRuntime() {
+  arch=$(docker version --format '{{.Server.Arch}}')
+  runtime="go1.x"
+
+  if [ "$arch" == "arm64" ]; then
+      runtime="provided.al2"
+  fi
+
+  echo "$runtime"
+}
+
+function GetHandler() {
+  arch=$(docker version --format '{{.Server.Arch}}')
+  handler="main"
+
+  if [ "$arch" == "arm64" ]; then
+      handler="bootstrap"
+  fi
+
+  echo "$handler"
+}
+
+
+################################################
+# Configure Workdir
+################################################
+echo "configuring workdir..."
+lambdaWorkdir="$(IsWordInCurrentPath "$scriptPath" $lambdaName)"
+projectWorkdir="$(IsWordInCurrentPath "$scriptPath" $projectName)"
+workdir=""
+
+if [ "$lambdaWorkdir" == "TRUE" ]; then
+  echo "working on lambda workdir"
+  workdir=$(GetWorkDir "$scriptPath" "$lambdaName")
+elif [ "$projectWorkdir" == "TRUE" ]; then
+  echo "working on project workdir"
+  workdir=$(GetWorkDir "$scriptPath" "$projectName")
+else
+  echo "Invalid workdir"
+  exit 1
+fi
+
+# validate last char
+lastChar="${workdir: -1}"
+
+if [ "$lastChar" == "/" ]; then
+  workdir="${workdir%?}"
+fi
+
+echo "workdir is $workdir"
+
+
+################################################
+# Configure Container
+################################################
+echo "creating network"
+docker network create -d bridge "$dockerNetworkName"
+echo "creating container"
+docker run -d -p "$dynamodbPort:8000" --name "$dynamodbDockerName" --network "$dockerNetworkName" "$dockerImageName"
+dynamodbURL="http://localhost:$dynamodbPort"
+echo "container created! - URL -> $dynamodbURL"
+
+# Define the maximum number of retries
+maxRetries=5
+retryInterval=3
+
+# Wait for the container to be ready
+retryCount=0
+while [ $retryCount -lt $maxRetries ]; do
+  if docker inspect --format '{{.State.Status}}' "$dynamodbDockerName" | grep -q "running"; then
+    echo "Container is ready."
+    break
+  else
+    echo "Container is not ready yet. Retrying in $retryInterval seconds..."
+    sleep $retryInterval
+    ((retryCount++))
+  fi
+done
+
+# Check if the maximum number of retries reached
+if [ "$retryCount" -eq $maxRetries ]; then
+  echo "Max retries reached. Container may not be ready."
+fi
+
+
+################################################
+# Configure Table
+################################################
+echo "creating table $dynamodbTableName"
+RunCMD "aws dynamodb create-table --endpoint-url $dynamodbURL --table-name $dynamodbTableName --attribute-definitions AttributeName=Id,AttributeType=S AttributeName=CreatedAt,AttributeType=S --key-schema AttributeName=Id,KeyType=HASH AttributeName=CreatedAt,KeyType=RANGE --provisioned-throughput ReadCapacityUnits=10,WriteCapacityUnits=10 --tags Key=Owner,Value=RicardoRomero --no-cli-pager"
+echo "table created with name $dynamodbTableName"
 
 ## insert items
-echo "inserting items"
-run_cmd "aws dynamodb put-item --endpoint-url $DYNAMODB_URL --table-name $DYNAMODB_TABLE_NAME --item '{\"Age\": {\"N\": \"30\"},\"CreatedAt\": {\"S\": \"2020-05-15T14:44:37.609166-06:00\"},\"Email\": {\"S\": \"alex.cruz@test.com\"},\"Id\": {\"S\": \"7d76ceb5-58f9-4263-8cf8-1f85664214c4\"},\"Lastname\": {\"S\": \"cruz\"},\"Name\": {\"S\": \"alejandro\"},\"UpdatedAt\": {\"S\": \"2024-04-14T13:44:37.609169-06:00\"}}'"
-run_cmd "aws dynamodb put-item --endpoint-url $DYNAMODB_URL --table-name $DYNAMODB_TABLE_NAME --item '{\"Age\": {\"N\": \"24\"},\"CreatedAt\": {\"S\": \"2021-05-15T14:44:37.609166-06:00\"},\"Email\": {\"S\": \"josep.cruz@test.com\"},\"Id\": {\"S\": \"7d76ceb5-58f9-4263-8cf8-1f85664214c5\"},\"Lastname\": {\"S\": \"cruz\"},\"Name\": {\"S\": \"josep\"},\"UpdatedAt\": {\"S\": \"2024-04-14T13:44:37.609169-06:00\"}}'"
-run_cmd "aws dynamodb put-item --endpoint-url $DYNAMODB_URL --table-name $DYNAMODB_TABLE_NAME --item '{\"Age\": {\"N\": \"18\"},\"CreatedAt\": {\"S\": \"2022-05-15T14:44:37.609166-06:00\"},\"Email\": {\"S\": \"miguel.cruz@test.com\"},\"Id\": {\"S\": \"7d76ceb5-58f9-4263-8cf8-1f85664214c6\"},\"Lastname\": {\"S\": \"cruz\"},\"Name\": {\"S\": \"miguel\"},\"UpdatedAt\": {\"S\": \"2024-04-14T13:44:37.609169-06:00\"}}'"
-run_cmd "aws dynamodb put-item --endpoint-url $DYNAMODB_URL --table-name $DYNAMODB_TABLE_NAME --item '{\"Age\": {\"N\": \"19\"},\"CreatedAt\": {\"S\": \"2023-05-15T14:44:37.609166-06:00\"},\"Email\": {\"S\": \"roberto.cruz@test.com\"},\"Id\": {\"S\": \"7d76ceb5-58f9-4263-8cf8-1f85664214c7\"},\"Lastname\": {\"S\": \"cruz\"},\"Name\": {\"S\": \"roberto\"},\"UpdatedAt\": {\"S\": \"2024-04-14T13:44:37.609169-06:00\"}}'"
-run_cmd "aws dynamodb put-item --endpoint-url $DYNAMODB_URL --table-name $DYNAMODB_TABLE_NAME --item '{\"Age\": {\"N\": \"17\"},\"CreatedAt\": {\"S\": \"2024-05-15T14:44:37.609166-06:00\"},\"Email\": {\"S\": \"john.cruz@test.com\"},\"Id\": {\"S\": \"7d76ceb5-58f9-4263-8cf8-1f85664214c8\"},\"Lastname\": {\"S\": \"cruz\"},\"Name\": {\"S\": \"john\"},\"UpdatedAt\": {\"S\": \"2024-04-14T13:44:37.609169-06:00\"}}'"
+echo "inserting items ..."
+RunCMD "aws dynamodb put-item --endpoint-url $dynamodbURL --table-name $dynamodbTableName --item '{\"Age\": {\"N\": \"30\"},\"CreatedAt\": {\"S\": \"2020-05-15T14:44:37.609166-06:00\"},\"Email\": {\"S\": \"alex.cruz@test.com\"},\"Id\": {\"S\": \"7d76ceb5-58f9-4263-8cf8-1f85664214c4\"},\"Lastname\": {\"S\": \"cruz\"},\"Name\": {\"S\": \"alejandro\"},\"UpdatedAt\": {\"S\": \"2024-04-14T13:44:37.609169-06:00\"}}'"
+RunCMD "aws dynamodb put-item --endpoint-url $dynamodbURL --table-name $dynamodbTableName --item '{\"Age\": {\"N\": \"24\"},\"CreatedAt\": {\"S\": \"2021-05-15T14:44:37.609166-06:00\"},\"Email\": {\"S\": \"josep.cruz@test.com\"},\"Id\": {\"S\": \"7d76ceb5-58f9-4263-8cf8-1f85664214c5\"},\"Lastname\": {\"S\": \"cruz\"},\"Name\": {\"S\": \"josep\"},\"UpdatedAt\": {\"S\": \"2024-04-14T13:44:37.609169-06:00\"}}'"
+RunCMD "aws dynamodb put-item --endpoint-url $dynamodbURL --table-name $dynamodbTableName --item '{\"Age\": {\"N\": \"18\"},\"CreatedAt\": {\"S\": \"2022-05-15T14:44:37.609166-06:00\"},\"Email\": {\"S\": \"miguel.cruz@test.com\"},\"Id\": {\"S\": \"7d76ceb5-58f9-4263-8cf8-1f85664214c6\"},\"Lastname\": {\"S\": \"cruz\"},\"Name\": {\"S\": \"miguel\"},\"UpdatedAt\": {\"S\": \"2024-04-14T13:44:37.609169-06:00\"}}'"
+RunCMD "aws dynamodb put-item --endpoint-url $dynamodbURL --table-name $dynamodbTableName --item '{\"Age\": {\"N\": \"19\"},\"CreatedAt\": {\"S\": \"2023-05-15T14:44:37.609166-06:00\"},\"Email\": {\"S\": \"roberto.cruz@test.com\"},\"Id\": {\"S\": \"7d76ceb5-58f9-4263-8cf8-1f85664214c7\"},\"Lastname\": {\"S\": \"cruz\"},\"Name\": {\"S\": \"roberto\"},\"UpdatedAt\": {\"S\": \"2024-04-14T13:44:37.609169-06:00\"}}'"
+RunCMD "aws dynamodb put-item --endpoint-url $dynamodbURL --table-name $dynamodbTableName --item '{\"Age\": {\"N\": \"17\"},\"CreatedAt\": {\"S\": \"2024-05-15T14:44:37.609166-06:00\"},\"Email\": {\"S\": \"john.cruz@test.com\"},\"Id\": {\"S\": \"7d76ceb5-58f9-4263-8cf8-1f85664214c8\"},\"Lastname\": {\"S\": \"cruz\"},\"Name\": {\"S\": \"john\"},\"UpdatedAt\": {\"S\": \"2024-04-14T13:44:37.609169-06:00\"}}'"
 echo "items inserted"
 
-sleep 120
 
-## initialize sam cli
-dir="$projectPath/tests/integration"
+################################################
+# Run SAM CLI
+################################################
 
-mkdir -p "$dir/.sam-cli/build"
+# define sam cli variables
+codeURI="$workdir/cmd"
+integrationDir="$workdir/tests/integration"
+buildPath="$integrationDir/.aws-sam/build"
+samTemplatePath="$integrationDir/template.tmpl"
+samFilePath="$integrationDir/template.yaml"
+eventFilePath="$integrationDir/event.json"
+architecture="$(GetArchitecture)"
+runtime="$(GetRuntime)"
+handler="$(GetHandler)"
+
+mkdir -p "$buildPath"
 
 ## generate template file
-echo "generating template, $dir"
-CODE_URI="$projectPath/cmd"
+echo "generating template, $buildPath"
+echo "architecture $architecture, runtime $runtime, handler $handler"
+
+dynamodbInternal="http://host.docker.internal:$dynamodbPort"
 # Preprocess the SAM template
-sed -e "s|{{ CODE_URI }}|$CODE_URI|g" \
-    -e "s|{{ DYNAMODB_URL }}|$DOCKER_URL|g" \
-    -e "s|{{ DYNAMODB_TABLE_NAME }}|$DYNAMODB_TABLE_NAME|g" \
-    "$dir/template.tmpl" > "$dir/template.yaml"
+sed -e "s|{{ CODE_URI }}|$codeURI|g" \
+    -e "s|{{ DYNAMODB_URL }}|$dynamodbInternal|g" \
+    -e "s|{{ ARCHITECTURE }}|$architecture|g" \
+    -e "s|{{ RUNTIME }}|$runtime|g" \
+    -e "s|{{ HANDLER }}|$handler|g" \
+    -e "s|{{ DYNAMODB_TABLE_NAME }}|$dynamodbTableName|g" \
+    "$samTemplatePath" > "$samFilePath"
 echo "template generated"
 
-echo ""
+# sam cli build
+samBuildPath="$buildPath/template.yaml"
+
+# building program
 echo "running sam cli"
 ## build sam cli
-run_cmd "sam build $SAM_FUNCTION_NAME --template $dir/template.yaml --build-dir $dir/.aws-sam/build --network $DOCKER_NETWORK_NAME"
+RunCMD "sam build $samFunctionName --template $samFilePath --build-dir $buildPath --no-cached"
+
 ## run sam cli
-run_cmd "sam local invoke $SAM_FUNCTION_NAME --template $dir/.aws-sam/build/template.yaml --event $dir/event.json --network $DOCKER_NETWORK_NAME"
+echo "invoke lambda"
+RunCMD "sam local invoke $samFunctionName --template $samBuildPath --event $eventFilePath --docker-network $dockerNetworkName"
 
 echo
 echo "cleaning environment"
-sleep 1
-rm -rf "$dir/.aws-sam"
-rm -rf "$dir/.sam-cli"
-rm "$dir/template.yaml"
+sleep 2
+rm -rf "$integrationDir/.aws-sam"
+rm -rf "$integrationDir/.sam-cli"
+rm "$samFilePath"
 
-clean_container
+CleanContainer

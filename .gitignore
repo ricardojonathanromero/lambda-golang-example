@@ -26,3 +26,7 @@ go.work.sum
 # ides
 .idea
 .vscode
+
+# SAM CLI
+**/*.yaml
+**/*.yml
