@@ -6,17 +6,17 @@ import (
 	"github.com/ricardojonathanromero/go-utilities/environment"
 	"github.com/ricardojonathanromero/go-utilities/logger"
 	dbInfra "github.com/ricardojonathanromero/lambda-golang-example/business/db"
-	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/internal/handlers"
-	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/pkg/repository"
-	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/pkg/services"
+	"github.com/ricardojonathanromero/lambda-golang-example/create-user-lambda/internal/handler"
+	"github.com/ricardojonathanromero/lambda-golang-example/create-user-lambda/pkg/repository"
+	"github.com/ricardojonathanromero/lambda-golang-example/create-user-lambda/pkg/service"
 )
 
 const (
-	envName      = "LOG_LEVEL"
+	appName      = "create-user-lambda"
 	envTableName = "DYNAMODB_TABLE_NAME"
-	defaultEnv   = "debug"
+	envName      = "ENV"
+	defaultEnv   = "local"
 	defaultEmpty = ""
-	appName      = "get-all-documents-lambda"
 )
 
 func main() {
@@ -46,8 +46,7 @@ func main() {
 	}
 
 	// init dependency injection
-	repo := repository.New(conn, tableName, customLog)
-	srv := services.New(repo, customLog)
-
-	lambda.Start(handlers.New(srv, customLog).HandleRequest)
+	repo := repository.New(tableName, conn, customLog)
+	srv := service.New(repo, customLog)
+	lambda.Start(handler.New(srv, customLog).HandleCreateUser)
 }

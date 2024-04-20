@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/ricardojonathanromero/go-utilities/logger"
-	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/internal/utils"
 	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/pkg/services"
+	"github.com/ricardojonathanromero/lambda-golang-example/utils/encoding"
 	"net/http"
 )
 
@@ -45,6 +45,6 @@ func (h *handleImpl) HandleRequest(ctx context.Context, req events.APIGatewayPro
 		Headers: map[string]string{
 			"Content-Type": "application/json",
 		},
-		Body: utils.ToString(users),
+		Body: encoding.ToString(users),
 	}, nil
 }

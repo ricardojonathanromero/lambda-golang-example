@@ -1,7 +1,7 @@
-package utils_test
+package encoding_test
 
 import (
-	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/internal/utils"
+	"github.com/ricardojonathanromero/lambda-golang-example/utils/encoding"
 	"testing"
 )
 
@@ -11,7 +11,7 @@ func TestToString(t *testing.T) {
 			"message": "hello world",
 		}
 
-		result := utils.ToString(mapInput)
+		result := encoding.ToString(mapInput)
 		if len(result) == 0 {
 			t.Errorf("no len: %d", len(result))
 			t.FailNow()
@@ -20,7 +20,7 @@ func TestToString(t *testing.T) {
 
 	t.Run("error", func(t *testing.T) {
 		value := make(chan int)
-		result := utils.ToString(value)
+		result := encoding.ToString(value)
 		if len(result) != 0 {
 			t.Errorf("no len: %d", len(result))
 			t.FailNow()

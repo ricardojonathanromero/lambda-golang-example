@@ -34,7 +34,7 @@ func (repo *repositoryImpl) FindAllDocuments(ctx context.Context) ([]*models.Use
 		TableName: aws.String(repo.tableName),
 	}
 
-	repo.log.Debug("executing scan")
+	repo.log.Debugf("executing scan in table: %s", repo.tableName)
 	output, err := repo.conn.Scan(ctx, input)
 	if err != nil {
 		// eval error

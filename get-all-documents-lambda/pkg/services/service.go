@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/ricardojonathanromero/go-utilities/logger"
 	"github.com/ricardojonathanromero/lambda-golang-example/business/models"
-	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/internal/utils"
 	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/pkg/repository"
+	"github.com/ricardojonathanromero/lambda-golang-example/utils/encoding"
 )
 
 type Service interface {
@@ -33,6 +33,6 @@ func (srv *serviceImpl) LookingUpUsers(ctx context.Context) ([]*models.UserDB, e
 		return nil, err
 	}
 
-	srv.log.Debug(utils.ToString(users))
+	srv.log.Debug(encoding.ToString(users))
 	return users, err
 }

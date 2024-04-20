@@ -1,4 +1,4 @@
-module github.com/ricardojonathanromero/lambda-golang-example/dependencies
+module github.com/ricardojonathanromero/lambda-golang-example/utils
 
 go 1.22
 
@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.31.1
 	github.com/docker/docker v26.0.1+incompatible
 	github.com/docker/go-connections v0.5.0
-	github.com/ricardojonathanromero/go-utilities v0.0.0-20240414203729-653561775eeb
+	github.com/ricardojonathanromero/go-utilities v0.0.1
 	github.com/stretchr/testify v1.9.0
 )
 
