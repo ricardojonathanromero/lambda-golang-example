@@ -1,11 +1,11 @@
-package handlers
+package handler
 
 import (
 	"context"
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/ricardojonathanromero/go-utilities/logger"
-	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/pkg/services"
+	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/pkg/service"
 	"github.com/ricardojonathanromero/lambda-golang-example/internal/utils/encoding"
 	"net/http"
 )
@@ -15,11 +15,11 @@ type Handler interface {
 }
 
 type handleImpl struct {
-	srv services.Service
+	srv service.Service
 	log logger.Logger
 }
 
-func New(srv services.Service, log logger.Logger) Handler {
+func New(srv service.Service, log logger.Logger) Handler {
 	return &handleImpl{
 		srv: srv,
 		log: log,
@@ -30,6 +30,7 @@ func (h *handleImpl) HandleRequest(ctx context.Context, req events.APIGatewayPro
 	h.log.Debug("handleRequest")
 	users, err := h.srv.LookingUpUsers(ctx)
 	if err != nil {
+		h.log.Errorf("error from service: %v", err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusConflict,
 			Headers: map[string]string{

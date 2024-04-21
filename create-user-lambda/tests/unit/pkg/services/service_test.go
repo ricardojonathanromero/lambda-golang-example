@@ -107,6 +107,4 @@ var _ = Describe("Service", func() {
 			})
 		})
 	})
-
-	Expect(nil)
 })

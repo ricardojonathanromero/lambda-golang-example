@@ -5,9 +5,9 @@ import (
 	"github.com/ricardojonathanromero/go-utilities/db/dynamodb"
 	"github.com/ricardojonathanromero/go-utilities/environment"
 	"github.com/ricardojonathanromero/go-utilities/logger"
-	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/internal/handlers"
+	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/internal/handler"
 	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/pkg/repository"
-	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/pkg/services"
+	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/pkg/service"
 	dbInfra "github.com/ricardojonathanromero/lambda-golang-example/internal/db"
 )
 
@@ -47,7 +47,7 @@ func main() {
 
 	// init dependency injection
 	repo := repository.New(conn, tableName, customLog)
-	srv := services.New(repo, customLog)
+	srv := service.New(repo, customLog)
 
-	lambda.Start(handlers.New(srv, customLog).HandleRequest)
+	lambda.Start(handler.New(srv, customLog).HandleRequest)
 }
