@@ -1,7 +1,9 @@
 package entities
 
 import (
+	"fmt"
 	"github.com/google/uuid"
+	"github.com/ricardojonathanromero/go-utilities/environment"
 	"github.com/ricardojonathanromero/lambda-golang-example/business/models"
 	"time"
 )
@@ -16,12 +18,18 @@ type UserReq struct {
 	UpdatedAt time.Time `json:"-"`
 }
 
+const (
+	envLocation     = "TZ_LOCATION"
+	defaultLocation = "America/Los_Angeles"
+)
+
 func (u *UserReq) ToDB() (*models.UserDB, error) {
 	u.ID = uuid.NewString()
 
-	lc, err := time.LoadLocation("America/Los_Angeles")
+	tz := environment.GetEnv(envLocation, defaultLocation)
+	lc, err := time.LoadLocation(tz)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("location %s not found: %w", tz, err)
 	}
 
 	now := time.Now().In(lc)
