@@ -43,6 +43,12 @@ func (check *dbInfra) ConfigureTable(tableName string) error {
 			return err
 		}
 
+		var oe *smithy.OperationError
+		if errors.As(err, &oe) {
+			check.log.Errorf("failed to call service: %s, operation: %s, error: %v", oe.Service(), oe.Service(), oe.Unwrap())
+			return err
+		}
+
 		check.log.Errorf("error describing table: %v", err)
 		return err
 	}
