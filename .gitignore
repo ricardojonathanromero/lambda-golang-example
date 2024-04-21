@@ -30,7 +30,3 @@ go.work.sum
 # SAM CLI
 **/*.yaml
 **/*.yml
-
-# pkg
-pkg
-tests
