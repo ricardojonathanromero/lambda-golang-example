@@ -13,6 +13,7 @@ import (
 	dynamodb2 "github.com/ricardojonathanromero/go-utilities/db/dynamodb"
 	"github.com/stretchr/testify/suite"
 	"os"
+	"time"
 )
 
 const (
@@ -71,6 +72,24 @@ func (db *dbSuiteImpl) StartDynamoDB() error {
 	err = cli.ContainerStart(ctx, res.ID, container.StartOptions{})
 	if err != nil {
 		return err
+	}
+
+	var isRunning bool
+	var count int
+	maxRetries := 3
+
+	for !isRunning && count <= maxRetries {
+		containerInfo, errInspect := cli.ContainerInspect(ctx, res.ID)
+		if errInspect != nil {
+			return err
+		}
+
+		isRunning = containerInfo.State.Running
+
+		if !isRunning {
+			time.Sleep(time.Second * 5)
+			count++
+		}
 	}
 
 	_, err = cli.ContainerInspect(ctx, res.ID)
