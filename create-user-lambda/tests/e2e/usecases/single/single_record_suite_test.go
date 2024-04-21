@@ -1,7 +1,9 @@
 package single_test
 
 import (
+	"context"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/ricardojonathanromero/go-utilities/logger"
@@ -9,6 +11,7 @@ import (
 	"github.com/ricardojonathanromero/lambda-golang-example/internal/utils/allocate"
 	"github.com/ricardojonathanromero/lambda-golang-example/internal/utils/tests"
 	"testing"
+	"time"
 )
 
 var _ = BeforeSuite(func() {
@@ -42,6 +45,27 @@ var _ = BeforeSuite(func() {
 	conn, err = dynamodbTestConn.GetLocalClient()
 	Expect(err).To(BeNil())
 	Expect(conn).NotTo(BeNil())
+
+	log.Debug("checking dynamodb connection is available")
+	var isDBActive bool
+	var count int
+	maxRetries := 3
+
+	for count <= maxRetries {
+		_, err := conn.ListTables(context.Background(), &dynamodb.ListTablesInput{})
+		if err != nil {
+			log.Debug("not ready, sleeping by 5 seconds")
+			time.Sleep(time.Second * 5)
+			count++
+			continue
+		} else {
+			log.Debug("connection ready")
+			isDBActive = true
+			break
+		}
+	}
+
+	Expect(isDBActive).To(BeTrue())
 
 	// configure table
 	log.Debugf("configuring table")

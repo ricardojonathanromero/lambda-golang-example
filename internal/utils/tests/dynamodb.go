@@ -92,11 +92,6 @@ func (db *dbSuiteImpl) StartDynamoDB() error {
 		}
 	}
 
-	_, err = cli.ContainerInspect(ctx, res.ID)
-	if err != nil {
-		return err
-	}
-
 	db.url = fmt.Sprintf("http://localhost:%s", db.exposedPort)
 
 	return nil
