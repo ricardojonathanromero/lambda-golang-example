@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/ricardojonathanromero/go-utilities/environment"
-	"github.com/ricardojonathanromero/lambda-golang-example/business/models"
+	"github.com/ricardojonathanromero/lambda-golang-example/internal/models"
 	"time"
 )
 

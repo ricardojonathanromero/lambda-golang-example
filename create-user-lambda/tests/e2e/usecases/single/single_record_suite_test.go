@@ -5,9 +5,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/ricardojonathanromero/go-utilities/logger"
-	"github.com/ricardojonathanromero/lambda-golang-example/business/db"
-	"github.com/ricardojonathanromero/lambda-golang-example/utils/allocate"
-	"github.com/ricardojonathanromero/lambda-golang-example/utils/tests"
+	"github.com/ricardojonathanromero/lambda-golang-example/internal/db"
+	"github.com/ricardojonathanromero/lambda-golang-example/internal/utils/allocate"
+	"github.com/ricardojonathanromero/lambda-golang-example/internal/utils/tests"
 	"testing"
 )
 

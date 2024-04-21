@@ -15,8 +15,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/ricardojonathanromero/go-utilities/logger"
-	"github.com/ricardojonathanromero/lambda-golang-example/business/models"
 	"github.com/ricardojonathanromero/lambda-golang-example/create-user-lambda/pkg/repository"
+	"github.com/ricardojonathanromero/lambda-golang-example/internal/models"
 	"net/http"
 	"time"
 )

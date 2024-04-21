@@ -2,10 +2,7 @@ module github.com/ricardojonathanromero/lambda-golang-example/create-user-lambda
 
 go 1.22.0
 
-replace (
-	github.com/ricardojonathanromero/lambda-golang-example/business => ./../business
-	github.com/ricardojonathanromero/lambda-golang-example/utils => ./../utils
-)
+replace github.com/ricardojonathanromero/lambda-golang-example/internal => ./../internal
 
 require (
 	github.com/aws/aws-lambda-go v1.47.0
@@ -21,8 +18,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.17.1
 	github.com/onsi/gomega v1.33.0
 	github.com/ricardojonathanromero/go-utilities v0.0.1
-	github.com/ricardojonathanromero/lambda-golang-example/business v0.0.0-00010101000000-000000000000
-	github.com/ricardojonathanromero/lambda-golang-example/utils v0.0.0-00010101000000-000000000000
+	github.com/ricardojonathanromero/lambda-golang-example/internal v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.9.0
 )
 
@@ -43,7 +39,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/docker v26.0.1+incompatible // indirect
+	github.com/docker/docker v26.0.2+incompatible // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -55,7 +51,7 @@ require (
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38 // indirect
+	github.com/google/pprof v0.0.0-20240416155748-26353dc0451f // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect

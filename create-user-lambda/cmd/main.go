@@ -5,10 +5,10 @@ import (
 	"github.com/ricardojonathanromero/go-utilities/db/dynamodb"
 	"github.com/ricardojonathanromero/go-utilities/environment"
 	"github.com/ricardojonathanromero/go-utilities/logger"
-	dbInfra "github.com/ricardojonathanromero/lambda-golang-example/business/db"
 	"github.com/ricardojonathanromero/lambda-golang-example/create-user-lambda/internal/handler"
 	"github.com/ricardojonathanromero/lambda-golang-example/create-user-lambda/pkg/repository"
 	"github.com/ricardojonathanromero/lambda-golang-example/create-user-lambda/pkg/service"
+	dbInfra "github.com/ricardojonathanromero/lambda-golang-example/internal/db"
 )
 
 const (
