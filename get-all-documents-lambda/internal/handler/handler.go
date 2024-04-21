@@ -26,7 +26,7 @@ func New(srv service.Service, log logger.Logger) Handler {
 	}
 }
 
-func (h *handleImpl) HandleRequest(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func (h *handleImpl) HandleRequest(ctx context.Context, _ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	h.log.Debug("handleRequest")
 	users, err := h.srv.LookingUpUsers(ctx)
 	if err != nil {
