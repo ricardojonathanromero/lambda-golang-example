@@ -1,7 +1,7 @@
 package encoding_test
 
 import (
-	"github.com/ricardojonathanromero/lambda-golang-example/utils/encoding"
+	"github.com/ricardojonathanromero/lambda-golang-example/internal/utils/encoding"
 	"testing"
 )
 
