@@ -6,7 +6,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/ricardojonathanromero/go-utilities/logger"
 	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/pkg/services"
-	"github.com/ricardojonathanromero/lambda-golang-example/utils/encoding"
+	"github.com/ricardojonathanromero/lambda-golang-example/internal/utils/encoding"
 	"net/http"
 )
 

@@ -3,8 +3,7 @@ module github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-
 go 1.22.0
 
 replace (
-	github.com/ricardojonathanromero/lambda-golang-example/business => ./../business
-	github.com/ricardojonathanromero/lambda-golang-example/utils => ./../utils
+	github.com/ricardojonathanromero/lambda-golang-example/internal => ./../internal
 )
 
 require (
@@ -17,8 +16,6 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/ricardojonathanromero/go-utilities v0.0.1
-	github.com/ricardojonathanromero/lambda-golang-example/business v0.0.0-00010101000000-000000000000
-	github.com/ricardojonathanromero/lambda-golang-example/utils v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.9.0
 )
 

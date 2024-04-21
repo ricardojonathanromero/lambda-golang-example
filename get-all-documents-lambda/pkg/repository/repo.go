@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/ricardojonathanromero/go-utilities/logger"
-	"github.com/ricardojonathanromero/lambda-golang-example/business/models"
+	"github.com/ricardojonathanromero/lambda-golang-example/internal/models"
 )
 
 type Repository interface {

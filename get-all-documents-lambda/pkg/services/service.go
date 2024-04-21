@@ -3,9 +3,9 @@ package services
 import (
 	"context"
 	"github.com/ricardojonathanromero/go-utilities/logger"
-	"github.com/ricardojonathanromero/lambda-golang-example/business/models"
 	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/pkg/repository"
-	"github.com/ricardojonathanromero/lambda-golang-example/utils/encoding"
+	"github.com/ricardojonathanromero/lambda-golang-example/internal/models"
+	"github.com/ricardojonathanromero/lambda-golang-example/internal/utils/encoding"
 )
 
 type Service interface {
