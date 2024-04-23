@@ -1,16 +1,19 @@
-package empty_test
+package one_record_test
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/ricardojonathanromero/go-utilities/logger"
 	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/internal/handler"
 	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/pkg/repository"
 	"github.com/ricardojonathanromero/lambda-golang-example/get-all-documents-lambda/pkg/service"
+	"github.com/ricardojonathanromero/lambda-golang-example/internal/models"
 	"github.com/ricardojonathanromero/lambda-golang-example/internal/utils/tests"
 	"net/http"
 	"time"
@@ -28,7 +31,7 @@ var (
 	log              logger.Logger
 )
 
-var _ = Describe("no records", func() {
+var _ = Describe("one record", func() {
 	var hdl handler.Handler
 	var lambdaCtx *lambdacontext.LambdaContext
 	var ctx context.Context
@@ -56,23 +59,45 @@ var _ = Describe("no records", func() {
 				ctx = lambdacontext.NewContext(ctx, lambdaCtx)
 			})
 
-			It("return empty list", func() {
-				defer cancel()
-
-				req := events.APIGatewayProxyRequest{
-					Resource:   "/",
-					Path:       "/",
-					HTTPMethod: http.MethodGet,
+			Context("set one item in db", func() {
+				item := &models.UserDB{
+					ID:        uuid.NewString(),
+					Name:      "john",
+					Lastname:  "smith",
+					Age:       23,
+					Email:     "john.smith@test.com",
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
 				}
 
-				log.Debug("start send handler request")
-				res, errRes := hdl.HandleRequest(ctx, req)
+				BeforeEach(func() {
+					err := dynamodbTestConn.PutItem(tableName, item)
+					Expect(err).To(BeNil())
+				})
 
-				Expect(errRes).To(BeNil())
-				Expect(res).NotTo(BeNil())
-				Expect(res.StatusCode).To(Equal(http.StatusOK))
-				Expect(res.Body).NotTo(BeEmpty())
-				Expect(res.Body).To(Equal(`[]`))
+				It("return empty list", func() {
+					defer cancel()
+
+					req := events.APIGatewayProxyRequest{
+						Resource:   "/",
+						Path:       "/",
+						HTTPMethod: http.MethodGet,
+					}
+
+					log.Debug("start send handler request")
+					res, errRes := hdl.HandleRequest(ctx, req)
+
+					Expect(errRes).To(BeNil())
+					Expect(res).NotTo(BeNil())
+					Expect(res.StatusCode).To(Equal(http.StatusOK))
+					Expect(res.Body).NotTo(BeEmpty())
+
+					var result []*models.UserDB
+					err := json.Unmarshal([]byte(res.Body), &result)
+					Expect(err).To(BeNil())
+					Expect(result).To(HaveLen(1))
+					Expect(result[0].ID).To(Equal(item.ID))
+				})
 			})
 		})
 	})
