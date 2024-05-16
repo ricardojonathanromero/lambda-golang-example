@@ -12,17 +12,19 @@ import (
 )
 
 const (
-	envName      = "LOG_LEVEL"
-	envTableName = "DYNAMODB_TABLE_NAME"
-	defaultEnv   = "debug"
-	defaultEmpty = ""
-	appName      = "get-all-documents-lambda"
+	logLevelEnv        = "LOG_LEVEL"
+	defaultLogLevelEnv = "info"
+	envTableName       = "DYNAMODB_TABLE_NAME"
+	defaultEmpty       = ""
+	appName            = "get-all-documents-lambda"
 )
 
 func main() {
+	logLevel := environment.GetEnv(logLevelEnv, defaultLogLevelEnv)
+
 	customLog := logger.NewLoggerWithOptions(logger.Opts{
 		AppName: appName,
-		Level:   environment.GetEnv(envName, defaultEnv),
+		Level:   logLevel,
 	})
 
 	// connect to db
